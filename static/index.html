@@ -243,12 +243,21 @@
                 const formData = new FormData();
                 formData.append('video', file);
 
+                console.log('Sending request to Modal endpoint...');
                 const response = await fetch('https://atharvaj--video-processor-fastapi-app.modal.run/process-video/', {
                     method: 'POST',
                     body: formData
                 });
 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}: ${responseText}`);
+                }
+
+                const data = JSON.parse(responseText);
 
                 if (data.error) {
                     alert('Error: ' + data.error);
@@ -259,14 +268,16 @@
                 // Display results
                 transcription.innerHTML = `<p>${data.transcription}</p>`;
                 
-                data.segments.forEach((segment, index) => {
+                segments.innerHTML = ''; // Clear previous segments
+                data.topics.forEach((topic, index) => {
                     const segmentElement = document.createElement('div');
                     segmentElement.className = 'segment';
                     segmentElement.innerHTML = `
-                        <h4>${segment.topic}</h4>
-                        <div class="segment-text">${segment.text}</div>
+                        <h4>${topic.title}</h4>
+                        <div class="segment-text">Start: ${topic.start_text}</div>
+                        <div class="segment-text">End: ${topic.end_text}</div>
                         <video controls>
-                            <source src="${segment.path}" type="video/mp4">
+                            <source src="${topic.video_url}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     `;
